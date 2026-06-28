@@ -1,4 +1,4 @@
-name: CI Pipeline (Elite)
+name: CI Pipeline
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
     branches:
       - main
 
-# Prevent duplicate runs (VERY important in real CI systems)
+# Prevent duplicate runs
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -44,7 +44,7 @@ jobs:
           pip install -r app/requirements.txt
 
       # -------------------------------
-      # 4. Code formatting check (STRICT)
+      # 4. Code formatting check 
       # -------------------------------
       - name: Lint Code (flake8)
         run: |
@@ -52,7 +52,7 @@ jobs:
           flake8 app --count --max-line-length=100 --statistics
 
       # -------------------------------
-      # 5. Security scan (real DevOps standard)
+      # 5. Security scan 
       # -------------------------------
       - name: Dependency Security Scan
         run: |
@@ -85,7 +85,7 @@ jobs:
           docker images | grep devops-phase0
 
       # -------------------------------
-      # 9. Basic container sanity test (ELITE STEP)
+      # 9. Basic container sanity test 
       # -------------------------------
       - name: Test Docker Container
         run: |
