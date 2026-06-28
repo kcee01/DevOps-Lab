@@ -57,7 +57,7 @@ jobs:
       - name: Dependency Security Scan
         run: |
           pip install pip-audit
-          pip-audit || true
+          pip-audit
 
       # -------------------------------
       # 6. Unit test stage (future-proofing)
