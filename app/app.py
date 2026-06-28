@@ -4,6 +4,7 @@ from flask import Flask
 # Create a Flask application instance
 app = Flask(__name__)
 
+
 # Define the route for the home page ("/")
 @app.route("/")
 def home():
@@ -13,6 +14,7 @@ def home():
     <p>Application is running successfully!</p>
     """
 
+
 # Define a health check endpoint
 @app.route("/health")
 def health():
@@ -20,6 +22,7 @@ def health():
     return {
         "status": "healthy"
     }
+
 
 # Start the Flask development server only when this file is run directly
 if __name__ == "__main__":
