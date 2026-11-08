@@ -8,68 +8,44 @@ on:
     branches:
       - main
 
-# Prevent duplicate runs
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-test:
-
     runs-on: ubuntu-latest
 
     steps:
-
-      # -------------------------------
-      # 1. Checkout code
-      # -------------------------------
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # -------------------------------
-      # 2. Set up Python (with caching)
-      # -------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
 
-      # -------------------------------
-      # 3. Install dependencies
-      # -------------------------------
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r app/requirements.txt
 
-      # -------------------------------
-      # 4. Code formatting check 
-      # -------------------------------
       - name: Lint Code (flake8)
         run: |
           pip install flake8
           flake8 app --count --max-line-length=100 --statistics
 
-      # -------------------------------
-      # 5. Security scan 
-      # -------------------------------
       - name: Dependency Security Scan
         run: |
           pip install pip-audit
           pip-audit
 
-      # -------------------------------
-      # 6. Unit test stage (future-proofing)
-      # -------------------------------
       - name: Run Tests (pytest)
         run: |
           pip install pytest
           if [ -d "tests" ]; then pytest -q; else echo "No tests found - skipping"; fi
 
-      # -------------------------------
-      # 7. Docker build (production tagging)
-      # -------------------------------
       - name: Build Docker Image
         run: |
           docker build \
@@ -77,16 +53,10 @@ jobs:
             -t devops-phase0:${{ github.sha }} \
             ./app
 
-      # -------------------------------
-      # 8. Validate Docker image
-      # -------------------------------
       - name: Verify Docker Image
         run: |
           docker images | grep devops-phase0
 
-      # -------------------------------
-      # 9. Basic container sanity test 
-      # -------------------------------
       - name: Test Docker Container
         run: |
           docker run -d -p 5000:5000 --name test-app devops-phase0:latest
@@ -94,3 +64,42 @@ jobs:
           curl -f http://localhost:5000/health || (docker logs test-app && exit 1)
           docker stop test-app
           docker rm test-app
+
+  deploy:
+    needs: build-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect GitHub Runner to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+
+      - name: Load SSH deployment key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Configure SSH host verification
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "[$SERVER_HOST]:22 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICS/HDbCSGemuEuXQbLWYF1cBLhu+NAp09cOGyhBp6hw" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Verify Tailscale SSH connectivity
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          nc -zv "$SERVER_HOST" 22
+
+      - name: Deploy to Ubuntu VM
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          ssh -o BatchMode=yes "$SERVER_USER@$SERVER_HOST" \
+            'sudo -n /usr/local/bin/deploy-devops-lab'
