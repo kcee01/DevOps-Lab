@@ -87,7 +87,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "[$SERVER_HOST]:22 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICS/HDbCSGemuEuXQbLWYF1cBLhu+NAp09cOGyhBp6hw" >> ~/.ssh/known_hosts
+          echo "$SERVER_HOST ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICS/HDbCSGemuEuXQbLWYF1cBLhu+NAp09cOGyhBp6hw" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
       - name: Verify Tailscale SSH connectivity
