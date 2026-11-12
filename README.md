@@ -127,6 +127,8 @@ Stop the application:
 ```bash
 docker compose down
 ```
+# Stop and remove a standalone container started with docker run
+docker rm -f flask-app
 
 ## CI/CD Pipeline
 
